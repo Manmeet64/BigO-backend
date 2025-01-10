@@ -5,7 +5,7 @@ import {
     Badge,
     LearningPath,
     Leaderboard,
-} from "../models/model.js";
+} from "../model/model.js";
 
 // Register a user
 export const registerUser = async (req, res) => {
@@ -50,14 +50,18 @@ export const getUserProfile = async (req, res) => {
 };
 
 // Deck Controller
+
 // Create a deck
 export const createDeck = async (req, res) => {
     try {
         const { name, difficulty, flashcards } = req.body;
+
+        // Create flashcards first and then create the deck
+        const createdFlashcards = await Flashcard.insertMany(flashcards);
+
         const newDeck = new Deck({
             name,
-            difficulty,
-            flashcards,
+            flashcards: createdFlashcards.map((fc) => fc._id),
             creator: req.userId,
         });
         await newDeck.save();
@@ -76,13 +80,69 @@ export const createDeck = async (req, res) => {
     }
 };
 
-// Get decks
+// Get all decks
 export const getDecks = async (req, res) => {
     try {
-        const decks = await Deck.find({ creator: null }); // Prebuilt decks
+        const decks = await Deck.find({ creator: req.userId }).populate(
+            "flashcards"
+        );
         res.status(200).json(decks);
     } catch (error) {
         res.status(500).json({ error: "Error fetching decks" });
+    }
+};
+
+// Get a specific deck by ID
+export const getDeckById = async (req, res) => {
+    try {
+        const deck = await Deck.findById(req.params.id).populate("flashcards");
+        if (!deck) return res.status(404).json({ error: "Deck not found" });
+        res.status(200).json(deck);
+    } catch (error) {
+        res.status(500).json({ error: "Error fetching deck" });
+    }
+};
+
+// Update a deck's details
+export const updateDeck = async (req, res) => {
+    try {
+        const { name, difficulty, flashcards } = req.body;
+        const updatedDeck = await Deck.findByIdAndUpdate(
+            req.params.id,
+            { name, difficulty, flashcards },
+            { new: true }
+        );
+
+        if (!updatedDeck)
+            return res.status(404).json({ error: "Deck not found" });
+        res.status(200).json({
+            message: "Deck updated successfully",
+            deck: updatedDeck,
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Error updating deck" });
+    }
+};
+
+// Delete a deck
+export const deleteDeck = async (req, res) => {
+    try {
+        const deletedDeck = await Deck.findByIdAndDelete(req.params.id);
+        if (!deletedDeck)
+            return res.status(404).json({ error: "Deck not found" });
+
+        // Remove deck from user
+        const user = await User.findById(req.userId);
+        user.customDecks = user.customDecks.filter(
+            (deckId) => deckId.toString() !== req.params.id
+        );
+        await user.save();
+
+        res.status(200).json({
+            message: "Deck deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Error deleting deck" });
     }
 };
 

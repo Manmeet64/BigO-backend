@@ -18,28 +18,23 @@ const userSchema = new mongoose.Schema(
 );
 
 // Deck Schema
-const deckSchema = new mongoose.Schema(
-    {
-        name: { type: String, required: true },
-        difficulty: {
-            type: String,
-            enum: ["easy", "medium", "hard"],
-            required: true,
-        },
-        flashcards: [
-            {
-                question: { type: String, required: true },
-                answer: { type: String, required: true },
-            },
-        ],
-        creator: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            default: null,
-        },
+const deckSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    flashcards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Flashcard" }],
+    creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+});
+//Flashcard schema
+// Flashcard schema with Enum for 'difficulty'
+const flashcardSchema = new mongoose.Schema({
+    question: { type: String, required: true },
+    answer: { type: String, required: true },
+    difficulty: {
+        type: String,
+        enum: ["Easy", "Medium", "Hard"], // Enum values for the difficulty level
+        required: true,
     },
-    { timestamps: true }
-);
+    deck: { type: mongoose.Schema.Types.ObjectId, ref: "Deck" },
+});
 
 // Badge Schema
 const badgeSchema = new mongoose.Schema(
@@ -78,6 +73,7 @@ const Deck = mongoose.model("Deck", deckSchema);
 const Badge = mongoose.model("Badge", badgeSchema);
 const LearningPath = mongoose.model("LearningPath", learningPathSchema);
 const Leaderboard = mongoose.model("Leaderboard", leaderboardSchema);
+const Flashcard = mongoose.model("flashcard", flashcardSchema);
 
 // Export all models
-export { User, Deck, Badge, LearningPath, Leaderboard };
+export { User, Deck, Badge, LearningPath, Leaderboard, Flashcard };
