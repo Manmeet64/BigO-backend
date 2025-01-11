@@ -73,7 +73,7 @@ const Deck = mongoose.model("Deck", deckSchema);
 const Badge = mongoose.model("Badge", badgeSchema);
 const LearningPath = mongoose.model("LearningPath", learningPathSchema);
 const Leaderboard = mongoose.model("Leaderboard", leaderboardSchema);
-const Flashcard = mongoose.model("flashcard", flashcardSchema);
+const Flashcard = mongoose.model("flashcards", flashcardSchema);
 
 // Export all models
 export { User, Deck, Badge, LearningPath, Leaderboard, Flashcard };

@@ -4,6 +4,7 @@ import {
     Deck,
     Badge,
     LearningPath,
+    Flashcard,
     Leaderboard,
 } from "../model/model.js";
 
@@ -54,41 +55,100 @@ export const getUserProfile = async (req, res) => {
 // Create a deck
 export const createDeck = async (req, res) => {
     try {
-        const { name, difficulty, flashcards } = req.body;
+        const { name, flashcards } = req.body;
+        const userId = req.params.userId; // Get the userId from params
 
-        // Create flashcards first and then create the deck
-        const createdFlashcards = await Flashcard.insertMany(flashcards);
+        // Validate input
+        if (!name || !Array.isArray(flashcards) || flashcards.length === 0) {
+            return res
+                .status(400)
+                .json({ error: "Deck name and flashcards are required" });
+        }
 
+        // Validate the user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Create flashcards
+        const createdFlashcards = await Flashcard.create(
+            flashcards.map((flashcard) => ({
+                ...flashcard,
+                deck: null, // Initially set the `deck` field to null
+            }))
+        );
+
+        // Debug: Log the created flashcards
+        console.log("Created Flashcards:", createdFlashcards);
+
+        // Create the deck
         const newDeck = new Deck({
             name,
             flashcards: createdFlashcards.map((fc) => fc._id),
-            creator: req.userId,
+            creator: userId,
         });
         await newDeck.save();
 
-        // Add deck to user
-        const user = await User.findById(req.userId);
+        // Update the deck field in flashcards
+        await Promise.all(
+            createdFlashcards.map((fc) =>
+                Flashcard.findByIdAndUpdate(fc._id, { deck: newDeck._id })
+            )
+        );
+
+        // Debug: Log the updated flashcards
+        const updatedFlashcards = await Flashcard.find({
+            _id: { $in: createdFlashcards.map((fc) => fc._id) },
+        });
+        console.log("Updated Flashcards with Deck:", updatedFlashcards);
+
+        // Add the new deck to the user's customDecks
         user.customDecks.push(newDeck._id);
         await user.save();
 
         res.status(201).json({
             message: "Deck created successfully",
             deck: newDeck,
+            flashcards: updatedFlashcards,
         });
     } catch (error) {
-        res.status(500).json({ error: "Error creating deck" });
+        console.error("Error creating deck:", error); // Log the error
+        res.status(500).json({
+            error: "Error creating deck",
+            details: error.message,
+        });
     }
 };
 
 // Get all decks
 export const getDecks = async (req, res) => {
     try {
-        const decks = await Deck.find({ creator: req.userId }).populate(
-            "flashcards"
+        // Get all decks for the given user
+        const decks = await Deck.find({ creator: req.params.userId });
+
+        // Fetch flashcards for each deck manually
+        const decksWithFlashcards = await Promise.all(
+            decks.map(async (deck) => {
+                // Fetch flashcards for the current deck using the deck's flashcard references
+                const flashcards = await Flashcard.find({
+                    _id: { $in: deck.flashcards }, // Find flashcards with ids in the deck's flashcards array
+                });
+
+                // Return deck with the flashcards populated
+                return {
+                    ...deck.toObject(),
+                    flashcards,
+                };
+            })
         );
-        res.status(200).json(decks);
+
+        res.status(200).json(decksWithFlashcards);
     } catch (error) {
-        res.status(500).json({ error: "Error fetching decks" });
+        res.status(500).json({
+            error: "Error fetching decks",
+            details: error.message,
+        });
     }
 };
 

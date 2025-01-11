@@ -18,8 +18,8 @@ router.post("/login", loginUser);
 router.get("/user/:id", getUserProfile);
 
 // Deck routes
-router.post("/deck", createDeck);
-router.get("/decks", getDecks);
+router.post("/deck/:userId", createDeck);
+router.get("/decks/:userId", getDecks);
 
 // Badge routes
 router.post("/badge", createBadge);

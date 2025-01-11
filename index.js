@@ -14,7 +14,7 @@ app.use(express.json());
 connectDB();
 
 // Routes
-app.use("/BigO", router);
+app.use("/bigo", router);
 
 // Test route
 app.get("/", (req, res) => {
