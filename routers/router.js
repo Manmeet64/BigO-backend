@@ -8,6 +8,9 @@ import {
     createBadge,
     createLearningPath,
     updateLeaderboard,
+    getLearningPaths,
+    getDecksByLearningPathId,
+    getLearningPathById,
 } from "../controllers/controller.js";
 
 const router = express.Router();
@@ -26,6 +29,9 @@ router.post("/badge", createBadge);
 
 // Learning Path routes
 router.post("/learning-path", createLearningPath);
+router.get("/learning-paths", getLearningPaths);
+router.get("/learning-path/:learningPathId/decks", getDecksByLearningPathId);
+router.get("/learning-path/:learningPathId", getLearningPathById);
 
 // Leaderboard routes
 router.post("/leaderboard", updateLeaderboard);

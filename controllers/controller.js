@@ -256,3 +256,69 @@ export const updateLeaderboard = async (req, res) => {
         res.status(500).json({ error: "Error updating leaderboard" });
     }
 };
+
+// Get all learning paths
+export const getLearningPaths = async (req, res) => {
+    try {
+        const learningPaths = await LearningPath.find();
+        res.status(200).json(learningPaths);
+    } catch (error) {
+        res.status(500).json({
+            error: "Error fetching learning paths",
+            details: error.message,
+        });
+    }
+};
+
+// Get decks by learning path ID
+export const getDecksByLearningPathId = async (req, res) => {
+    try {
+        const learningPathId = req.params.learningPathId;
+
+        // Find the learning path and populate its decks
+        const learningPath = await LearningPath.findById(
+            learningPathId
+        ).populate({
+            path: "decks",
+            select: "name flashcards creator", // Select the deck fields you want
+        });
+
+        if (!learningPath) {
+            return res.status(404).json({ error: "Learning path not found" });
+        }
+
+        res.status(200).json(learningPath.decks);
+    } catch (error) {
+        console.error("Error fetching decks:", error);
+        res.status(500).json({
+            error: "Error fetching decks for learning path",
+            details: error.message,
+        });
+    }
+};
+
+// Get learning path by ID
+export const getLearningPathById = async (req, res) => {
+    try {
+        const learningPathId = req.params.learningPathId;
+
+        const learningPath = await LearningPath.findById(
+            learningPathId
+        ).populate({
+            path: "decks",
+            select: "name flashcards creator",
+        });
+
+        if (!learningPath) {
+            return res.status(404).json({ error: "Learning path not found" });
+        }
+
+        res.status(200).json(learningPath);
+    } catch (error) {
+        console.error("Error fetching learning path:", error);
+        res.status(500).json({
+            error: "Error fetching learning path",
+            details: error.message,
+        });
+    }
+};
