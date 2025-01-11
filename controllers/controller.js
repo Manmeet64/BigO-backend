@@ -41,7 +41,7 @@ export const loginUser = async (req, res) => {
 export const getUserProfile = async (req, res) => {
     try {
         const user = await User.findById(req.params.id).populate(
-            "badges learningPaths customDecks friends"
+            "badges learningPaths friends"
         );
         if (!user) return res.status(404).json({ error: "User not found" });
         res.status(200).json(user);
